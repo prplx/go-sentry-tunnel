@@ -27,7 +27,9 @@ func main() {
 	log := setupLogger(config.Env)
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("POST /tunnel", handlers.HandleTunnel)
+	mux.HandleFunc("POST /tunnel", func(w http.ResponseWriter, r *http.Request) {
+		handlers.HandleTunnel(w, r, config)
+	})
 
 	server := &http.Server{
 		Addr:    ":" + config.Port,
@@ -36,6 +38,7 @@ func main() {
 	serverErrors := make(chan error, 1)
 
 	go func() {
+		log.Info("Starting server on port: " + config.Port)
 		serverErrors <- server.ListenAndServe()
 	}()
 
@@ -47,7 +50,7 @@ func main() {
 		log.Error("Could not start server:", sl.Err(err))
 		return
 	case <-shutdown:
-		log.Info("Starting shutdown...")
+		log.Info("Starting shutdown")
 
 		ctx, cancel := context.WithTimeout(context.Background(), config.ShutdownTimeout)
 		defer cancel()

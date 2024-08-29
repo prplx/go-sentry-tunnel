@@ -1,33 +1,27 @@
 package config
 
 import (
-	"fmt"
-	"os"
 	"time"
 
-	"github.com/prplx/go-sentry-tunnel/internal/errors"
+	"github.com/ilyakaznacheev/cleanenv"
 )
 
 type Config struct {
-	Env             string
-	Port            string
-	ShutdownTimeout time.Duration
+	DSN             []string      `env:"DSN, env-required"`
+	AllowOrigins    []string      `env:"ALLOW_ORIGINS" env-default:"*"`
+	Env             string        `env:"ENV" env-default:"production"`
+	Port            string        `env:"PORT" env-default:"3001"`
+	ShutdownTimeout time.Duration `env:"SHUTDOWN_TIMEOUT" env-default:"10s"`
+	RequestTimeout  time.Duration `env:"REQUEST_TIMEOUT" env-default:"5s"`
 }
 
 func MustLoad() *Config {
-	config := &Config{
-		Env:             os.Getenv("ENV"),
-		Port:            os.Getenv("PORT"),
-		ShutdownTimeout: 10 * time.Second,
+	var cfg Config
+
+	err := cleanenv.ReadEnv(&cfg)
+	if err != nil {
+		panic(err)
 	}
 
-	if config.Env == "" {
-		panic(fmt.Errorf("%w: ENV", errors.ErrorEnvVariableRequired))
-	}
-
-	if config.Port == "" {
-		panic(fmt.Errorf("%w: PORT", errors.ErrorEnvVariableRequired))
-	}
-
-	return config
+	return &cfg
 }
