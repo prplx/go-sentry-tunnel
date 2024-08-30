@@ -8,18 +8,13 @@ import (
 	"os/signal"
 	"syscall"
 
-	"fmt"
-
-	"github.com/prplx/go-sentry-tunnel/internal/config"
-	"github.com/prplx/go-sentry-tunnel/internal/errors"
-	"github.com/prplx/go-sentry-tunnel/internal/handlers"
-	"github.com/prplx/go-sentry-tunnel/internal/lib/sl"
+	"go-sentry-tunnel/internal/config"
+	"go-sentry-tunnel/internal/handlers"
+	"go-sentry-tunnel/internal/lib/sl"
 )
 
 const (
-	envDev  = "development"
 	envProd = "production"
-	envTest = "test"
 )
 
 func main() {
@@ -27,9 +22,9 @@ func main() {
 	log := setupLogger(config.Env)
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("POST /tunnel", func(w http.ResponseWriter, r *http.Request) {
-		handlers.HandleTunnel(w, r, config)
-	})
+	mux.HandleFunc("POST /tunnel", handlers.HandleTunnel(log, config))
+
+	log = log.With("op", "cmd/api/main")
 
 	server := &http.Server{
 		Addr:    ":" + config.Port,
@@ -67,17 +62,14 @@ func main() {
 func setupLogger(env string) *slog.Logger {
 	var log *slog.Logger
 
-	switch env {
-	case envDev:
-		log = slog.New(
-			slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}),
-		)
-	case envProd:
+	if env == envProd {
 		log = slog.New(
 			slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}),
 		)
-	default:
-		panic(fmt.Errorf("%w: ENV", errors.ErrorEnvVariableRequired))
+	} else {
+		log = slog.New(
+			slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}),
+		)
 	}
 
 	return log

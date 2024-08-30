@@ -23,5 +23,9 @@ func MustLoad() *Config {
 		panic(err)
 	}
 
+	if len(cfg.DSN) == 0 {
+		panic("DSN wasn't provided as an environment variable")
+	}
+
 	return &cfg
 }

@@ -14,6 +14,9 @@ build:
 run:
 	@go run ./cmd/api/main.go
 
+run/race:
+	@go run -race ./cmd/api/main.go
+
 bin:
 	/tmp/bin/${BINARY_NAME}
 

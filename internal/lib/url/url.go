@@ -5,18 +5,17 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/prplx/go-sentry-tunnel/internal/config"
-	"github.com/prplx/go-sentry-tunnel/internal/errors"
+	"errors"
 )
 
-func ValidateDSN(DSN string, config *config.Config) error {
-	for _, dsn := range config.DSN {
+func ValidateDSN(DSN string, validDSNs []string) error {
+	for _, dsn := range validDSNs {
 		if dsn == DSN {
 			return nil
 		}
 	}
 
-	return errors.ErrorInvalidDSN
+	return errors.New("invalid DSN")
 }
 
 func BuildSentryUpstreamURL(rawURL string) (string, error) {
