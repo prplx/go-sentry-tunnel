@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"bytes"
 	"encoding/json"
 	"io"
 	"log/slog"
@@ -18,12 +17,16 @@ type payload struct {
 	DSN string `json:"dsn"`
 }
 
-func HandleTunnel(l *slog.Logger, c *config.Config) http.HandlerFunc {
+type HTTPClient interface {
+	PostWithTimeout(URL string, payload []byte, timeout time.Duration) (*http.Response, error)
+}
+
+func HandleTunnel(client HTTPClient, logger *slog.Logger, config *config.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		log := l.With("op", "handlers/HandleTunnel")
+		log := logger.With("op", "handlers/HandleTunnel")
 		host := r.Header.Get("Origin")
 
-		for _, h := range c.AllowOrigins {
+		for _, h := range config.AllowOrigins {
 			if h == host || h == "*" {
 				w.Header().Set("Access-Control-Allow-Origin", h)
 			}
@@ -32,7 +35,7 @@ func HandleTunnel(l *slog.Logger, c *config.Config) http.HandlerFunc {
 		envelope, err := io.ReadAll(r.Body)
 		if err != nil {
 			log.Error("could not read request body:", sl.Err(err))
-			writeErrorToResponse(w)
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 		defer r.Body.Close()
@@ -43,16 +46,16 @@ func HandleTunnel(l *slog.Logger, c *config.Config) http.HandlerFunc {
 		err = decoder.Decode(&result)
 		if err != nil {
 			log.Error("could not decode request body:", sl.Err(err))
-			writeErrorToResponse(w)
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 		if result.DSN == "" {
 			log.Error("DSN is empty")
-			writeErrorToResponse(w)
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
-		err = url.ValidateDSN(result.DSN, c.DSN)
+		err = url.ValidateDSN(result.DSN, config.DSN)
 		if err != nil {
 			log.Error("invalid DSN provided in the payload:", sl.Err(err))
 			w.WriteHeader(http.StatusBadRequest)
@@ -66,7 +69,7 @@ func HandleTunnel(l *slog.Logger, c *config.Config) http.HandlerFunc {
 			return
 		}
 
-		resp, err := postWithTimeout(upstreamURL, envelope, c.RequestTimeout)
+		resp, err := client.PostWithTimeout(upstreamURL, envelope, config.RequestTimeout)
 		if err != nil {
 			log.Error("could not send request to upstream:", sl.Err(err))
 			w.WriteHeader(http.StatusInternalServerError)
@@ -82,21 +85,4 @@ func HandleTunnel(l *slog.Logger, c *config.Config) http.HandlerFunc {
 
 		w.WriteHeader(http.StatusOK)
 	}
-}
-
-func writeErrorToResponse(w http.ResponseWriter) {
-	w.WriteHeader(http.StatusInternalServerError)
-}
-
-func postWithTimeout(URL string, payload []byte, timeout time.Duration) (*http.Response, error) {
-	req, err := http.NewRequest("POST", URL, bytes.NewReader((payload)))
-	if err != nil {
-		return nil, err
-	}
-
-	client := &http.Client{
-		Timeout: timeout,
-	}
-
-	return client.Do(req)
 }

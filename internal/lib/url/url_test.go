@@ -1,10 +1,12 @@
-package url
+package url_test
 
 import (
+	"go-sentry-tunnel/internal/lib/url"
 	"testing"
 )
 
 func TestValidateDSN(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		DSN       string
 		validDSNs []string
@@ -48,8 +50,9 @@ func TestValidateDSN(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			if err := ValidateDSN(tt.args.DSN, tt.args.validDSNs); (err != nil) != tt.wantErr {
+			if err := url.ValidateDSN(tt.args.DSN, tt.args.validDSNs); (err != nil) != tt.wantErr {
 				t.Errorf("ValidateDSN() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -57,6 +60,7 @@ func TestValidateDSN(t *testing.T) {
 }
 
 func TestBuildSentryUpstreamURL(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		rawURL string
 	}
@@ -132,8 +136,9 @@ func TestBuildSentryUpstreamURL(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := BuildSentryUpstreamURL(tt.args.rawURL)
+			got, err := url.BuildSentryUpstreamURL(tt.args.rawURL)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("BuildSentryUpstreamURL() error = %v, wantErr %v", err, tt.wantErr)
 				return

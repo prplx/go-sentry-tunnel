@@ -10,6 +10,7 @@ import (
 
 	"go-sentry-tunnel/internal/config"
 	"go-sentry-tunnel/internal/handlers"
+	net "go-sentry-tunnel/internal/lib/http"
 	"go-sentry-tunnel/internal/lib/sl"
 )
 
@@ -22,7 +23,7 @@ func main() {
 	log := setupLogger(config.Env)
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("POST /tunnel", handlers.HandleTunnel(log, config))
+	mux.HandleFunc("POST /tunnel", handlers.HandleTunnel(&net.HTTPClient{}, log, config))
 
 	log = log.With("op", "cmd/api/main")
 
