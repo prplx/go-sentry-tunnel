@@ -24,3 +24,7 @@ git clone https://github.com/prplx/go-sentry-tunnel.git
 cd go-sentry-tunnel && go mod install
 DSN=https://user@host.ingest.sentry.io/project go run cmd/api/main.go
 ```
+
+## Using
+
+Use `/tunnel` endpoint to proxy your requests to Sentry.
