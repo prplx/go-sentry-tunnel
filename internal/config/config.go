@@ -12,7 +12,7 @@ type Config struct {
 	Env             string        `env:"ENV" env-default:"production"`
 	Port            string        `env:"PORT" env-default:"3001"`
 	ShutdownTimeout time.Duration `env:"SHUTDOWN_TIMEOUT" env-default:"10s"`
-	RequestTimeout  time.Duration `env:"REQUEST_TIMEOUT" env-default:"5s"`
+	RequestTimeout  time.Duration `env:"REQUEST_TIMEOUT" env-default:"10s"`
 }
 
 func MustLoad() *Config {
